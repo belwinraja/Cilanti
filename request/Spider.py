@@ -4,6 +4,7 @@ from links import Links
 from hasher import Hasher
 import Cilanticonfig
 from database import Database
+from Redis_cli import redis_cli
 from queue import *
 
 request_method = {
@@ -20,7 +21,8 @@ class Spider:
         self.URLset = Queue()
         [self.URLset.put(seed) for seed in Cilanticonfig.getSeed() ]
         self.URLhash = set([])
-        self.database = Database(Cilanticonfig.dbfile)
+        self.database = Database.Database(Cilanticonfig.dbfile)
+        self.redis= redis_cli.redisServer()
 
     def spi_request(self, method, *args, **kwargs):
         '''used to get the request pages async
@@ -32,10 +34,12 @@ class Spider:
     def spi_response(self, response):
         '''Response of the spi_request are handled here
         '''
-        if 'text/html' in response.headers['Content-Type']:
+        if 'text/html' in response.headers['Content-Type'] and response.status_code == 200:
             hash_val = Hasher.HashMD5(response.content)
-            if hash_val not in self.URLhash:
-                self.URLhash.add(hash_val)
+            if self.redis.getVariable(hash_val) is None:
+                if self.database.isConn():
+                    self.database.saveData(hash=hash_val ,url=response.url ,content=response)
+                self.redis.setVariable(hash_val, response.url)
                 [self.URLset.put(link) for link in Links.parse_link(response)]
 
                #STORE CURRENT URL AND DATA HERE

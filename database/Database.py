@@ -1,17 +1,13 @@
 import sqlite3
 
+class Database:
 
-class Database(object):
     def __init__(self, dbFile):
         try:
-            self.conn = sqlite3.connect(dbFile, isolation_level=None, check_same_thread = False)
-            self.conn.execute('''CREATE TABLE IF NOT EXISTS
-                            Webpage (id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                            url TEXT, 
-                            pageSource TEXT,
-                            keyword TEXT)''')
+            self.conn = sqlite3.connect(dbfile, isolation_level=None, check_same_thread = False)
+            self.conn.execute("CREATE TABLE IF NOT EXISTS Webpage (hash TEXT PRIMARY KEY, url TEXT, content TEXT);")
         except Exception as e:
-            self.conn = None
+            self.conn = ""
 
     def isConn(self):
         if self.conn:
@@ -19,10 +15,10 @@ class Database(object):
         else:
             return False
 
-    def saveData(self, url, pageSource, keyword=''):
+    def saveData(self, hash, url, content):
         if self.conn:
-            sql = '''INSERT INTO Webpage (url, pageSource, keyword) VALUES (?, ?, ?);'''
-            self.conn.execute(sql, (url, pageSource, keyword) )
+            sql = "INSERT INTO Webpage (hash, url, content) VALUES (?, ?, ?);"
+            self.conn.execute(sql, (hash, url, content) )
         else:
             raise sqlite3.OperationalError('Database is not connected. Can not save Data!')
 
